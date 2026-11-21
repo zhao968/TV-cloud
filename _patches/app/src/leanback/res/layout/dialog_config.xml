@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.fongmi.android.tv.ui.custom.JetStreamDialogRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="24dp">
+
+    <com.fongmi.android.tv.ui.custom.JetStreamQrCodeView
+        android:id="@+id/code"
+        android:layout_width="196dp"
+        android:layout_height="196dp" />
+
+    <com.fongmi.android.tv.ui.custom.JetStreamBodyTextView
+        android:id="@+id/info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_toEndOf="@+id/code"
+        android:ellipsize="end"
+        android:focusable="true"
+        android:maxLines="3"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        tools:text="@string/push_info" />
+
+    <com.fongmi.android.tv.ui.custom.JetStreamLabelTextView
+        android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <com.fongmi.android.tv.ui.custom.JetStreamDialogEditText
+        android:id="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/bottom"
+        android:layout_alignStart="@+id/info"
+        android:layout_marginBottom="14dp"
+        android:hint="@string/dialog_config_hint"
+        android:imeOptions="actionDone"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:minHeight="48dp"
+        android:nextFocusDown="@id/positive"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp"
+        android:singleLine="true"
+        android:textCursorDrawable="@drawable/shape_cursor" />
+
+    <com.fongmi.android.tv.ui.custom.JetStreamDialogButtonRowLayout
+        android:id="@+id/bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/info"
+        android:layout_alignBottom="@+id/code"
+        android:orientation="horizontal">
+
+        <com.fongmi.android.tv.ui.custom.JetStreamButtonTextView
+            android:id="@+id/fetch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="拉取接口" />
+
+        <com.fongmi.android.tv.ui.custom.JetStreamButtonTextView
+            android:id="@+id/choose"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="@string/setting_choose" />
+
+        <com.fongmi.android.tv.ui.custom.JetStreamButtonTextView
+            android:id="@+id/positive"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="@string/dialog_positive" />
+
+        <com.fongmi.android.tv.ui.custom.JetStreamButtonTextView
+            android:id="@+id/negative"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="@string/dialog_negative" />
+
+    </com.fongmi.android.tv.ui.custom.JetStreamDialogButtonRowLayout>
+</com.fongmi.android.tv.ui.custom.JetStreamDialogRelativeLayout>
