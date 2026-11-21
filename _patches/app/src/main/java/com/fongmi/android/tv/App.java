@@ -1,0 +1,166 @@
+package com.fongmi.android.tv;
+
+import android.app.Activity;
+import android.app.Application;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.os.HandlerCompat;
+
+import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.GlideWarmup;
+import com.fongmi.android.tv.utils.ToastFilter;
+import com.fongmi.android.tv.sync.CloudSyncManager;
+import com.fongmi.android.tv.sync.WebDavSyncManager;
+import com.fongmi.hook.Hook;
+import com.github.catvod.Init;
+import com.google.gson.Gson;
+
+public class App extends Application implements Application.ActivityLifecycleCallbacks {
+
+    private static volatile App instance;
+
+    private final Handler handler;
+    private final Gson gson;
+    private final long time;
+
+    private volatile Activity activity;
+    private Hook hook;
+    private int startedActivities;
+    private final Runnable automaticSync = new Runnable() {
+        @Override public void run() {
+            if (startedActivities == 0) return;
+            WebDavSyncManager.get().maybeAutoSync();
+            CloudSyncManager.get().maybeAutoSync();
+            handler.postDelayed(this, 15 * 60_000L);
+        }
+    };
+    private final Runnable backgroundSync = () -> {
+        if (startedActivities == 0) {
+            WebDavSyncManager.get().maybeAutoSyncOnBackground();
+            CloudSyncManager.get().maybeAutoSyncOnBackground();
+        }
+    };
+
+    public App() {
+        instance = this;
+        gson = new Gson();
+        time = System.currentTimeMillis();
+        handler = HandlerCompat.createAsync(Looper.getMainLooper());
+    }
+
+    public static App get() {
+        return instance;
+    }
+
+    public static Gson gson() {
+        return get().gson;
+    }
+
+    public static long time() {
+        return get().time;
+    }
+
+    public static Activity activity() {
+        return get().activity;
+    }
+
+    public static void post(Runnable runnable) {
+        get().handler.post(runnable);
+    }
+
+    public static void post(Runnable runnable, long delayMillis) {
+        get().handler.removeCallbacks(runnable);
+        if (delayMillis >= 0) get().handler.postDelayed(runnable, delayMillis);
+    }
+
+    public static void removeCallbacks(Runnable runnable) {
+        get().handler.removeCallbacks(runnable);
+    }
+
+    public static void removeCallbacks(Runnable... runnable) {
+        for (Runnable r : runnable) get().handler.removeCallbacks(r);
+    }
+
+    public void setHook(Hook hook) {
+        this.hook = hook;
+    }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        Init.set(base);
+        // Do not install Pine here — Prefers/settings may not be ready; attachBaseContext
+        // is also too early for ART hooks that race later DexClassLoader on API 30+.
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        GlideWarmup.start();
+        com.fongmi.android.tv.player.skip.LegacySkipMigration.clearPreferences();
+        // Only schedules Pine when toast filter is already enabled in settings.
+        ToastFilter.install();
+        Notify.createChannel();
+        registerActivityLifecycleCallbacks(this);
+        Init.setActivity(App::activity);
+        Init.setToast(text -> App.post(() -> Notify.show(text)));
+        Init.setDialog(com.fongmi.android.tv.ui.dialog.SpiderDialog::show);
+    }
+
+    @Override
+    public PackageManager getPackageManager() {
+        return hook != null ? hook : getBaseContext().getPackageManager();
+    }
+
+    @Override
+    public String getPackageName() {
+        return hook != null ? hook.getPackageName() : getBaseContext().getPackageName();
+    }
+
+    @Override
+    public void onActivityResumed(@NonNull Activity activity) {
+        if (activity != activity()) this.activity = activity;
+    }
+
+    @Override
+    public void onActivityPaused(@NonNull Activity activity) {
+        if (activity == activity()) this.activity = null;
+    }
+
+    @Override
+    public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    }
+
+    @Override
+    public void onActivityDestroyed(@NonNull Activity activity) {
+    }
+
+    @Override
+    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+    }
+
+    @Override
+    public void onActivityStarted(@NonNull Activity activity) {
+        handler.removeCallbacks(backgroundSync);
+        if (startedActivities++ == 0) {
+            handler.removeCallbacks(automaticSync);
+            handler.post(automaticSync);
+        }
+    }
+
+    @Override
+    public void onActivityStopped(@NonNull Activity activity) {
+        startedActivities = Math.max(0, startedActivities - 1);
+        if (startedActivities == 0) {
+            handler.removeCallbacks(automaticSync);
+            // Activity changes and rotations may briefly have no started Activity.
+            handler.postDelayed(backgroundSync, 2_000L);
+        }
+    }
+}
